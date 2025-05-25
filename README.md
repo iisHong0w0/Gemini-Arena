@@ -1,6 +1,9 @@
 # Gemini-Arena
 一個前端多AI對話模擬器，使用Gemini API。觀察多個AI之間的對話
 用了2小時跟gemini做的 蠻好玩的
+
+# 網站:https://iishong0w0.github.io/Gemini-Arena/
+
 可以讓毛AI跟蔣AI互相嘴砲
 
 
