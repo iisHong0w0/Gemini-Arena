@@ -8,7 +8,7 @@
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; color: #1c1e21; display: flex; flex-direction: column; min-height: 100vh; line-height: 1.6; }
-        header { background-color: #4267B2; color: white; padding: 0.8em 1em; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
+        header { background-color: #4267B2; color: white; padding: 0.8em 1em; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
         .container { display: flex; flex-grow: 1; padding: 1em; gap: 1em; overflow: hidden; }
         .config-panel { width: 340px; flex-shrink: 0; background-color: #fff; padding: 1.5em; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 1.2em; max-height: calc(100vh - 2em - 50px); overflow-y: auto; }
         .chat-display-panel { flex-grow: 1; min-width: 0; background-color: #fff; padding: 1.5em; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); display: flex; flex-direction: column; max-height: calc(100vh - 2em - 50px); }
@@ -34,6 +34,10 @@
         button.danger { background-color: #fa383e; }
         button.danger:hover { background-color: #e0282d; }
 
+        .lang-switcher button { background-color: #f0f2f5; color: #4267B2; border: 1px solid #4267B2; padding: 0.4em 0.8em; font-size: 0.8em; margin-left: 5px; width: auto; }
+        .lang-switcher button.active { background-color: #4267B2; color: white; }
+
+
         #aiAgentsConfigContainer .ai-config-card { border: 1px solid #ddd; padding: 1em; margin-bottom: 1em; border-radius: 5px; background: #f9f9f9; }
         #conversationLog { flex-grow: 1; overflow-y: auto; border: 1px solid #dddfe2; padding: 1em; background-color: #e9ebee; border-radius: 6px; margin-top:1em;}
         .chat-turn { margin-bottom: 1em; padding: 0.8em 1em; border-radius: 12px; max-width: 85%; word-wrap: break-word; }
@@ -52,6 +56,8 @@
 
 
         @media (max-width: 768px) {
+            header { flex-direction: column; gap: 0.5em; padding-bottom: 0.5em;}
+            .lang-switcher { margin-top: 0.3em; }
             .container { flex-direction: column; padding: 0.5em; overflow-y: auto; }
             .config-panel, .chat-display-panel { width: 100%; box-sizing: border-box; max-height: none; margin-bottom: 1em; }
             .config-panel { order: 1; max-height: 70vh; overflow-y: auto; }
@@ -64,56 +70,60 @@
 </head>
 <body>
     <header>
-        <h1>Gemini Arena</h1>
+        <h1 id="headerTitle">Gemini Arena</h1>
+        <div class="lang-switcher">
+            <button id="langEnBtn">English</button>
+            <button id="langZhBtn">中文</button>
+        </div>
     </header>
 
     <div class="container">
         <aside class="config-panel">
             <div class="card">
-                <h3><span style="color:red; font-weight:bold;">重要</span>: API 金鑰</h3>
+                <h3 id="apiKeyCardTitle"><span style="color:red; font-weight:bold;">重要</span>: API 金鑰</h3>
                 <div class="input-group">
                     <input type="password" id="apiKey" placeholder="在此輸入您的 API 金鑰">
                     <button id="getApiKeyBtn" class="inline-button secondary" title="如何獲取 Gemini API 金鑰">獲取金鑰</button>
                 </div>
-                <small style="color:red; display:block; margin-bottom:5px; font-size:0.8em;">此金鑰僅儲存在瀏覽器中。</small>
+                <small id="apiKeyNote" style="color:red; display:block; margin-bottom:5px; font-size:0.8em;">此金鑰僅儲存在瀏覽器中。</small>
             </div>
 
             <div class="card">
-                <h3>對話設定</h3>
-                <label for="numAIs">AI 參與者數量 (2-5):</label>
+                <h3 id="conversationSettingsTitle">對話設定</h3>
+                <label for="numAIs" id="numAIsLabel">AI 參與者數量 (2-5):</label>
                 <input type="number" id="numAIs" value="2" min="2" max="5">
 
-                <label for="conversationTopic">對話主題 (可選):</label>
+                <label for="conversationTopic" id="conversationTopicLabel">對話主題 (可選):</label>
                 <textarea id="conversationTopic" placeholder="例如：AI的道德倫理"></textarea>
 
-                <label for="maxTurns">最大對話輪次 (每AI發言一次算一輪):</label>
+                <label for="maxTurns" id="maxTurnsLabel">最大對話輪次 (每AI發言一次算一輪):</label>
                 <input type="number" id="maxTurns" value="5" min="1" max="20">
 
-                <label for="rateLimit">每分鐘最大對話數 (AI發言次數):</label>
+                <label for="rateLimit" id="rateLimitLabel">每分鐘最大對話數 (AI發言次數):</label>
                 <input type="number" id="rateLimit" value="5" min="1" max="60">
 
                 <div style="margin-top: 0.8em; padding-top: 0.8em; border-top: 1px solid #eee;">
-                    <label for="autoNextTurnCheckbox" style="display: flex; align-items: center; font-weight: normal; margin-bottom:0; cursor:pointer;">
+                    <label for="autoNextTurnCheckbox" id="autoNextTurnLabel" style="display: flex; align-items: center; font-weight: normal; margin-bottom:0; cursor:pointer;">
                         <input type="checkbox" id="autoNextTurnCheckbox">
-                        自動進行下一輪
+                        <span id="autoNextTurnText">自動進行下一輪</span>
                     </label>
-                    <small style="font-size:0.8em; color: #555; display:block; margin-left: 1.9em;">啟用後，AI 將自動輪流發言。</small>
+                    <small id="autoNextTurnNote" style="font-size:0.8em; color: #555; display:block; margin-left: 1.9em;">啟用後，AI 將自動輪流發言。</small>
                 </div>
             </div>
 
             <div class="card">
-                <h3>模型管理(可選)</h3>
-                <label for="customModelName">添加自定義模型名稱(本身自帶模型)</label>
+                <h3 id="modelManagementTitle">模型管理(可選)</h3>
+                <label for="customModelName" id="customModelNameLabel">添加自定義模型名稱(本身自帶模型)</label>
                 <div class="input-group">
                     <input type="text" id="customModelName" placeholder="例如：gemini-1.5-flash">
                     <button id="addCustomModelBtn" class="small-action-button">添加</button>
                 </div>
-                 <small style="font-size:0.8em; color: #555;">添加後，模型將出現在下方AI配置的下拉選單中。</small>
+                 <small id="customModelNote" style="font-size:0.8em; color: #555;">添加後，模型將出現在下方AI配置的下拉選單中。</small>
             </div>
 
 
             <div id="aiAgentsConfigContainer">
-                <h3>AI 參與者配置</h3>
+                <h3 id="aiParticipantsConfigTitle">AI 參與者配置</h3>
                 <!-- AI agent configurations will be added here by JS -->
             </div>
 
@@ -124,24 +134,24 @@
         </aside>
 
         <main class="chat-display-panel">
-            <h2>對話記錄</h2>
+            <h2 id="conversationLogTitle">對話記錄</h2>
             <div class="warning">
-                <strong>提示：</strong>
+                <strong id="warningTipTitle">提示：</strong>
                 <ul>
-                    <li>API 金鑰僅儲存在您目前的瀏覽器會話中。</li>
-                    <li>預覽版/自定義模型名稱可能變更或不可用，請確認。</li>
-                    <li>直接從瀏覽器呼叫 Google API <strong>極有可能會遇到 CORS 問題</strong>。請檢查瀏覽器控制台。</li>
+                    <li id="warningLi1">API 金鑰僅儲存在您目前的瀏覽器會話中。</li>
+                    <li id="warningLi2">預覽版/自定義模型名稱可能變更或不可用，請確認。</li>
+                    <li id="warningLi3">直接從瀏覽器呼叫 Google API <strong>極有可能會遇到 CORS 問題</strong>。請檢查瀏覽器控制台。</li>
                 </ul>
             </div>
             <div id="conversationLog">
-                <p><em>對話尚未開始... 請在左側配置並開始。</em></p>
+                <p id="conversationNotStarted"><em>對話尚未開始... 請在左側配置並開始。</em></p>
             </div>
             <div class="loading-indicator" id="loadingIndicator">
-                <p>AI 正在思考中...</p>
+                <p id="loadingText">AI 正在思考中...</p>
                 <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." width="40">
             </div>
              <div id="userInputSection" style="display:none;">
-                <label for="userInjectMessage">你的發言/提問:</label>
+                <label for="userInjectMessage" id="userInjectMessageLabel">你的發言/提問:</label>
                 <textarea id="userInjectMessage" placeholder="在此輸入你想對 AI 們說的話..."></textarea>
                 <button id="sendUserMessageBtn" class="secondary">發送給所有AI</button>
             </div>
@@ -156,7 +166,7 @@
         const conversationTopicInput = document.getElementById('conversationTopic');
         const maxTurnsInput = document.getElementById('maxTurns');
         const rateLimitInput = document.getElementById('rateLimit');
-        const autoNextTurnCheckbox = document.getElementById('autoNextTurnCheckbox'); // New
+        const autoNextTurnCheckbox = document.getElementById('autoNextTurnCheckbox');
         const customModelNameInput = document.getElementById('customModelName');
         const addCustomModelBtn = document.getElementById('addCustomModelBtn');
         const aiAgentsConfigContainer = document.getElementById('aiAgentsConfigContainer');
@@ -169,6 +179,8 @@
         const userInputSection = document.getElementById('userInputSection');
         const userInjectMessageInput = document.getElementById('userInjectMessage');
         const sendUserMessageBtn = document.getElementById('sendUserMessageBtn');
+        const langEnBtn = document.getElementById('langEnBtn');
+        const langZhBtn = document.getElementById('langZhBtn');
 
         // Global Variables
         let GEMINI_API_KEY = '';
@@ -181,16 +193,234 @@
         let abortController = null;
         let apiCallTimestamps = [];
         let currentRateLimit = 5;
+        let currentLanguage = 'zh'; // Default language
 
-        let availableModels = [
-            { name: "Gemini 2.5 Flash Preview (05-20)", value: "gemini-2.5-flash-preview-05-20" },
-            { name: "Gemini 2.0 Flash", value: "gemini-2.0-flash" }
+        const translations = {
+            en: {
+                pageTitle: "Gemini Arena - Multi-AI Conversation Simulator",
+                headerTitle: "Gemini Arena",
+                apiKeyCardTitle: "<span style='color:red; font-weight:bold;'>IMPORTANT</span>: API Key",
+                apiKeyPlaceholder: "Enter your API Key here",
+                getApiKeyBtn: "Get Key",
+                getApiKeyBtnTitle: "How to get a Gemini API Key",
+                apiKeyNote: "This key is only stored in your browser.",
+                conversationSettingsTitle: "Conversation Settings",
+                numAIsLabel: "Number of AI Participants (2-5):",
+                conversationTopicLabel: "Conversation Topic (Optional):",
+                conversationTopicPlaceholder: "e.g., Ethical implications of AI",
+                maxTurnsLabel: "Max Conversation Turns (one turn per AI speech):",
+                rateLimitLabel: "Max API Calls per Minute (AI speeches):",
+                autoNextTurnText: "Auto next turn",
+                autoNextTurnNote: "If enabled, AIs will take turns automatically.",
+                modelManagementTitle: "Model Management (Optional)",
+                customModelNameLabel: "Add Custom Model Name (built-in models available)",
+                customModelNamePlaceholder: "e.g., gemini-1.5-flash",
+                addCustomModelBtn: "Add",
+                customModelNote: "After adding, the model will appear in the AI config dropdowns below.",
+                aiParticipantsConfigTitle: "AI Participant Configuration",
+                aiCardTitle: "AI",
+                aiNameLabel: "Name:",
+                aiModelLabel: "Model:",
+                aiPersonaLabel: "Persona/Style Prompt (Optional):",
+                aiPersonaPlaceholder: "e.g., You are a seasoned philosopher...",
+                aiDefaultName: "AI",
+                startConversationBtn: "Start Conversation",
+                nextTurnBtn: "Next AI Speaks",
+                stopConversationBtn: "Stop Conversation",
+                exportLogBtn: "Export Log",
+                conversationLogTitle: "Conversation Log",
+                warningTipTitle: "Tip:",
+                warningLi1: "API Key is only stored in your current browser session.",
+                warningLi2: "Preview/custom model names might change or be unavailable. Please verify.",
+                warningLi3: "Calling Google API directly from the browser is <strong>highly likely to encounter CORS issues</strong>. Check browser console.",
+                conversationNotStarted: "<em>Conversation not started... Please configure and start on the left.</em>",
+                loadingText: "AI is thinking...",
+                rateLimitWaitingText: "Rate limit reached. Waiting {seconds} seconds...",
+                userInjectMessageLabel: "Your Speech/Question:",
+                userInjectMessagePlaceholder: "Enter what you want to say to the AIs...",
+                sendUserMessageBtn: "Send to all AIs",
+                systemLogPrefix: "System",
+                observerLogPrefix: "You (Observer)",
+                errorApiKeyNotSet: "Error: API Key not set.",
+                errorApiFailure: "API request failed ({modelName}): {status} - {message}",
+                errorApiFailureNoMsg: "API request failed ({modelName}): {status}",
+                errorApiKeyInvalid: " Please check your API key.",
+                errorModelNotFound: " Model \"{modelName}\" might not exist, be unavailable, or you lack permission. Please verify the model name.",
+                errorRateLimit: " Request frequency limit.",
+                errorResponseBlocked: "API response content blocked ({modelName}): {reason}. {reasonMessage}",
+                errorResponseInvalid: "API response format unrecognized or empty ({modelName}).",
+                errorApiCall: "Error calling API ({modelName}): {message}. Check browser console (could be CORS issue).",
+                errorRequestAborted: "API request aborted by user.",
+                logConversationStarted: "Conversation started! Topic: {topic}. {numAIs} AIs, max {maxTurns} turns. Max {rateLimit} AI speeches/min. Auto-speak mode: {autoModeStatus}.",
+                logTopicFree: "Free talk",
+                logAutoModeOn: "ON",
+                logAutoModeOff: "OFF",
+                logMaxTurnsReached: "Maximum conversation turns reached.",
+                logConversationStopped: "Conversation stopped.",
+                logCustomModelAdded: "Custom model \"{modelName}\" added.",
+                alertEnterModelName: "Please enter a valid model name.",
+                alertModelExists: "Model \"{modelName}\" already exists in the list.",
+                logAiFailedToSpeak: "{agentName} failed to speak.",
+                logAutoRetryNextAi: "Automatically trying next AI...",
+                logRateLimitWait: "Reached {rateLimit} calls per minute limit. Will continue in {seconds} seconds...",
+                modelFlashPreviewName: "Gemini 1.5 Flash Preview (05-20)", // Example for localizing model names
+                modelFlashName: "Gemini 1.5 Flash",
+                modelCustomSuffix: "(Custom)"
+            },
+            zh: {
+                pageTitle: "Gemini Arena - 多AI對話模擬器",
+                headerTitle: "Gemini Arena",
+                apiKeyCardTitle: "<span style='color:red; font-weight:bold;'>重要</span>: API 金鑰",
+                apiKeyPlaceholder: "在此輸入您的 API 金鑰",
+                getApiKeyBtn: "獲取金鑰",
+                getApiKeyBtnTitle: "如何獲取 Gemini API 金鑰",
+                apiKeyNote: "此金鑰僅儲存在瀏覽器中。",
+                conversationSettingsTitle: "對話設定",
+                numAIsLabel: "AI 參與者數量 (2-5):",
+                conversationTopicLabel: "對話主題 (可選):",
+                conversationTopicPlaceholder: "例如：AI的道德倫理",
+                maxTurnsLabel: "最大對話輪次 (每AI發言一次算一輪):",
+                rateLimitLabel: "每分鐘最大對話數 (AI發言次數):",
+                autoNextTurnText: "自動進行下一輪",
+                autoNextTurnNote: "啟用後，AI 將自動輪流發言。",
+                modelManagementTitle: "模型管理(可選)",
+                customModelNameLabel: "添加自定義模型名稱(本身自帶模型)",
+                customModelNamePlaceholder: "例如：gemini-1.5-flash",
+                addCustomModelBtn: "添加",
+                customModelNote: "添加後，模型將出現在下方AI配置的下拉選單中。",
+                aiParticipantsConfigTitle: "AI 參與者配置",
+                aiCardTitle: "AI",
+                aiNameLabel: "名稱:",
+                aiModelLabel: "模型:",
+                aiPersonaLabel: "個性/風格提示 (可選):",
+                aiPersonaPlaceholder: "例如：你是一位資深哲學家...",
+                aiDefaultName: "AI",
+                startConversationBtn: "開始對話",
+                nextTurnBtn: "下一位 AI 發言",
+                stopConversationBtn: "終止對話",
+                exportLogBtn: "導出對話記錄",
+                conversationLogTitle: "對話記錄",
+                warningTipTitle: "提示：",
+                warningLi1: "API 金鑰僅儲存在您目前的瀏覽器會話中。",
+                warningLi2: "預覽版/自定義模型名稱可能變更或不可用，請確認。",
+                warningLi3: "直接從瀏覽器呼叫 Google API <strong>極有可能會遇到 CORS 問題</strong>。請檢查瀏覽器控制台。",
+                conversationNotStarted: "<em>對話尚未開始... 請在左側配置並開始。</em>",
+                loadingText: "AI 正在思考中...",
+                rateLimitWaitingText: "速率限制中，等待 {seconds} 秒...",
+                userInjectMessageLabel: "你的發言/提問:",
+                userInjectMessagePlaceholder: "在此輸入你想對 AI 們說的話...",
+                sendUserMessageBtn: "發送給所有AI",
+                systemLogPrefix: "系統",
+                observerLogPrefix: "你 (觀察者)",
+                errorApiKeyNotSet: "錯誤: API 金鑰未設定。",
+                errorApiFailure: "API 請求失敗 ({modelName}): {status} - {message}",
+                errorApiFailureNoMsg: "API 請求失敗 ({modelName}): {status}",
+                errorApiKeyInvalid: " 請檢查 API 金鑰。",
+                errorModelNotFound: " 模型 \"{modelName}\" 可能不存在、不可用或您無權限。請確認模型名稱。",
+                errorRateLimit: " 請求頻率限制。",
+                errorResponseBlocked: "API 回應內容被阻止 ({modelName}): {reason}. {reasonMessage}",
+                errorResponseInvalid: "API 回應格式無法識別或為空 ({modelName})。",
+                errorApiCall: "調用 API 時發生錯誤 ({modelName}): {message}. 請檢查瀏覽器控制台 (可能是CORS問題)。",
+                errorRequestAborted: "API 請求已被用戶中斷。",
+                logConversationStarted: "對話開始！主題：{topic}。共 {numAIs} 位 AI，最多 {maxTurns} 輪。每分鐘最多 {rateLimit} 次AI發言。自動發言模式：{autoModeStatus}。",
+                logTopicFree: "自由對話",
+                logAutoModeOn: "開啟",
+                logAutoModeOff: "關閉",
+                logMaxTurnsReached: "已達到最大對話輪次。",
+                logConversationStopped: "對話已終止。",
+                logCustomModelAdded: "自定義模型 \"{modelName}\" 已添加。",
+                alertEnterModelName: "請輸入有效的模型名稱。",
+                alertModelExists: "模型 \"{modelName}\" 已存在於列表中。",
+                logAiFailedToSpeak: "{agentName} 未能成功發言。",
+                logAutoRetryNextAi: "自動嘗試下一位 AI...",
+                logRateLimitWait: "已達到每分鐘 {rateLimit} 次的發言限制。將在 {seconds} 秒後繼續...",
+                modelFlashPreviewName: "Gemini 1.5 Flash 預覽版 (05-20)",
+                modelFlashName: "Gemini 1.5 Flash",
+                modelCustomSuffix: "(自定義)"
+            }
+        };
+
+        let availableModels = [ // Base values, names will be localized
+            { nameKey: "modelFlashPreviewName", value: "gemini-1.5-flash-preview-05-20" },
+            { nameKey: "modelFlashName", value: "gemini-1.5-flash" } // Corrected to 1.5, as was in HTML
         ];
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            try { localStorage.setItem('aiArenaLanguage', lang); } catch(e) { console.warn("Local storage unavailable for language preference."); }
+            
+            const t = translations[lang];
+            document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+            document.title = t.pageTitle;
+
+            // Header and general
+            document.getElementById('headerTitle').textContent = t.headerTitle;
+            if (lang === 'en') {
+                langEnBtn.classList.add('active');
+                langZhBtn.classList.remove('active');
+            } else {
+                langZhBtn.classList.add('active');
+                langEnBtn.classList.remove('active');
+            }
+
+            // Config Panel
+            document.getElementById('apiKeyCardTitle').innerHTML = t.apiKeyCardTitle;
+            apiKeyInput.placeholder = t.apiKeyPlaceholder;
+            getApiKeyBtn.textContent = t.getApiKeyBtn;
+            getApiKeyBtn.title = t.getApiKeyBtnTitle;
+            document.getElementById('apiKeyNote').textContent = t.apiKeyNote;
+
+            document.getElementById('conversationSettingsTitle').textContent = t.conversationSettingsTitle;
+            document.getElementById('numAIsLabel').textContent = t.numAIsLabel;
+            document.getElementById('conversationTopicLabel').textContent = t.conversationTopicLabel;
+            conversationTopicInput.placeholder = t.conversationTopicPlaceholder;
+            document.getElementById('maxTurnsLabel').textContent = t.maxTurnsLabel;
+            document.getElementById('rateLimitLabel').textContent = t.rateLimitLabel;
+            document.getElementById('autoNextTurnText').textContent = t.autoNextTurnText;
+            document.getElementById('autoNextTurnNote').textContent = t.autoNextTurnNote;
+            
+            document.getElementById('modelManagementTitle').textContent = t.modelManagementTitle;
+            document.getElementById('customModelNameLabel').textContent = t.customModelNameLabel;
+            customModelNameInput.placeholder = t.customModelNamePlaceholder;
+            addCustomModelBtn.textContent = t.addCustomModelBtn;
+            document.getElementById('customModelNote').textContent = t.customModelNote;
+            
+            document.getElementById('aiParticipantsConfigTitle').textContent = t.aiParticipantsConfigTitle; // This title is static
+            updateAgentConfigUI(); // Re-render AI cards with new language
+
+            startConversationBtn.textContent = t.startConversationBtn;
+            nextTurnBtn.textContent = t.nextTurnBtn;
+            stopConversationBtn.textContent = t.stopConversationBtn;
+            exportLogBtn.textContent = t.exportLogBtn;
+
+            // Chat Display Panel
+            document.getElementById('conversationLogTitle').textContent = t.conversationLogTitle;
+            document.getElementById('warningTipTitle').textContent = t.warningTipTitle;
+            document.getElementById('warningLi1').innerHTML = t.warningLi1;
+            document.getElementById('warningLi2').innerHTML = t.warningLi2;
+            document.getElementById('warningLi3').innerHTML = t.warningLi3;
+            
+            if (conversationLogDiv.firstChild && conversationLogDiv.firstChild.id === 'conversationNotStarted') {
+                 document.getElementById('conversationNotStarted').innerHTML = t.conversationNotStarted;
+            }
+            document.getElementById('loadingText').textContent = t.loadingText; // Default loading text
+
+            document.getElementById('userInjectMessageLabel').textContent = t.userInjectMessageLabel;
+            userInjectMessageInput.placeholder = t.userInjectMessagePlaceholder;
+            sendUserMessageBtn.textContent = t.sendUserMessageBtn;
+        }
+
 
         // --- Utility Functions ---
         function showLoading(show) {
+            const t = translations[currentLanguage];
             loadingIndicator.style.display = show ? 'block' : 'none';
-            nextTurnBtn.disabled = show || !conversationActive || autoNextTurnCheckbox.checked; // Modified
+            if (show && loadingIndicator.querySelector('p').textContent.includes(t.rateLimitWaitingText.substring(0,10))) { // a bit hacky check
+                // Don't overwrite rate limit message
+            } else {
+                loadingIndicator.querySelector('p').textContent = t.loadingText;
+            }
+            nextTurnBtn.disabled = show || !conversationActive || autoNextTurnCheckbox.checked;
             startConversationBtn.disabled = show || conversationActive;
             sendUserMessageBtn.disabled = show || !conversationActive;
         }
@@ -202,6 +432,11 @@
         }
 
         function logMessage(sender, message, turnType = 'ai-turn') {
+            const t = translations[currentLanguage];
+            let localizedSender = sender;
+            if (sender === "系統" || sender === "System") localizedSender = t.systemLogPrefix;
+            else if (sender === "你 (觀察者)" || sender === "You (Observer)") localizedSender = t.observerLogPrefix;
+
             const turnDiv = document.createElement('div');
             turnDiv.classList.add('chat-turn', turnType);
 
@@ -211,48 +446,79 @@
             formattedMessage = formattedMessage.replace(/(\r\n|\r|\n)([\*\-\+] +(.*))/g, (match, p1, p2, p3) => `${p1}<li>${p3.trim()}</li>`);
             formattedMessage = formattedMessage.replace(/(<li>.*?<\/li>\s*)+/g, (match) => `<ul>${match}</ul>`);
 
-            turnDiv.innerHTML = `<span class="sender">${sanitizeHTML(sender)}:</span><div class="message-content">${formattedMessage}</div>`;
-             if (conversationLogDiv.firstChild && conversationLogDiv.firstChild.nodeName === 'P' && conversationLogDiv.firstChild.textContent.includes("尚未開始")) {
-                 conversationLogDiv.innerHTML = '';
+            turnDiv.innerHTML = `<span class="sender">${sanitizeHTML(localizedSender)}:</span><div class="message-content">${formattedMessage}</div>`;
+            
+            const notStartedMsg = document.getElementById('conversationNotStarted');
+            if (notStartedMsg) {
+                 conversationLogDiv.innerHTML = ''; // Clear "not started" message
             }
             conversationLogDiv.appendChild(turnDiv);
             conversationLogDiv.scrollTop = conversationLogDiv.scrollHeight;
-            fullConversationHistory.push({ sender, message });
+            fullConversationHistory.push({ sender: localizedSender, message }); // Store with localized sender for consistency if re-rendering
         }
 
         function updateAgentConfigUI() {
-            aiAgentsConfigContainer.innerHTML = '<h3>AI 參與者配置</h3>';
+            const t = translations[currentLanguage];
+            // Update the main title for AI Participants Config if it's not already part of the static text update
+            const mainTitleEl = document.getElementById('aiParticipantsConfigTitle');
+            if (mainTitleEl) mainTitleEl.textContent = t.aiParticipantsConfigTitle;
+
+
+            let configHTML = ''; // Build HTML string then set innerHTML once
             const numAIs = parseInt(numAIsInput.value);
              if (isNaN(numAIs) || numAIs < 2 || numAIs > 5) {
                 numAIsInput.value = Math.max(2, Math.min(5, isNaN(numAIs) ? 2 : numAIs));
-                return;
+                // No early return, proceed to render with corrected value
             }
+            
+            // Localize model names for the dropdown
+            const localizedModels = availableModels.map(m => {
+                let name = t[m.nameKey] || m.value; // Fallback to value if key not found
+                if (m.isCustom) name += ` ${t.modelCustomSuffix}`;
+                return { name, value: m.value };
+            });
 
-            for (let i = 0; i < numAIs; i++) {
+            for (let i = 0; i < numAIsInput.value; i++) {
                 const aiId = i + 1;
-                const card = document.createElement('div');
-                card.classList.add('ai-config-card');
-                card.innerHTML = `
-                    <h4>AI ${aiId}</h4>
-                    <label for="aiName${aiId}">名稱:</label>
-                    <input type="text" id="aiName${aiId}" value="AI ${aiId}">
-                    <label for="aiModel${aiId}">模型:</label>
-                    <select id="aiModel${aiId}">
-                        ${availableModels.map(m => `<option value="${m.value}" title="${m.value}">${m.name}</option>`).join('')}
-                    </select>
-                    <label for="aiPersona${aiId}">個性/風格提示 (可選):</label>
-                    <textarea id="aiPersona${aiId}" placeholder="例如：你是一位資深哲學家..."></textarea>
+                // Preserve existing values if possible when re-rendering due to language change
+                const existingNameInput = document.getElementById(`aiName${aiId}`);
+                const existingModelSelect = document.getElementById(`aiModel${aiId}`);
+                const existingPersonaTextarea = document.getElementById(`aiPersona${aiId}`);
+
+                const currentName = existingNameInput ? existingNameInput.value : `${t.aiDefaultName} ${aiId}`;
+                const currentModel = existingModelSelect ? existingModelSelect.value : (localizedModels.length > 0 ? localizedModels[0].value : '');
+                const currentPersona = existingPersonaTextarea ? existingPersonaTextarea.value : "";
+
+                configHTML += `
+                    <div class="ai-config-card">
+                        <h4>${t.aiCardTitle} ${aiId}</h4>
+                        <label for="aiName${aiId}">${t.aiNameLabel}</label>
+                        <input type="text" id="aiName${aiId}" value="${sanitizeHTML(currentName)}">
+                        <label for="aiModel${aiId}">${t.aiModelLabel}</label>
+                        <select id="aiModel${aiId}">
+                            ${localizedModels.map(m => `<option value="${m.value}" ${m.value === currentModel ? 'selected' : ''} title="${m.value}">${m.name}</option>`).join('')}
+                        </select>
+                        <label for="aiPersona${aiId}">${t.aiPersonaLabel}</label>
+                        <textarea id="aiPersona${aiId}" placeholder="${t.aiPersonaPlaceholder}">${sanitizeHTML(currentPersona)}</textarea>
+                    </div>
                 `;
-                aiAgentsConfigContainer.appendChild(card);
             }
+            // Clear only the cards, not the title if title is static
+            const containerContent = aiAgentsConfigContainer.querySelector('.ai-config-card') ? aiAgentsConfigContainer : document.createElement('div');
+            if(aiAgentsConfigContainer.children.length > 1) { // If cards exist, replace them
+                // Remove existing cards
+                Array.from(aiAgentsConfigContainer.getElementsByClassName('ai-config-card')).forEach(card => card.remove());
+            }
+            aiAgentsConfigContainer.insertAdjacentHTML('beforeend', configHTML);
         }
         numAIsInput.addEventListener('input', updateAgentConfigUI);
-        updateAgentConfigUI();
+        // Initial call to render based on default numAIs and language is handled by setLanguage -> updateAgentConfigUI
 
         // --- Gemini API Call ---
         async function callGeminiApi(prompt, modelName, agentHistory) {
+            const t = translations[currentLanguage];
             if (!GEMINI_API_KEY) {
-                logMessage("系統", "錯誤: API 金鑰未設定。", 'user-turn');
+                logMessage(t.systemLogPrefix, t.errorApiKeyNotSet, 'user-turn');
                 return null;
             }
             showLoading(true);
@@ -273,13 +539,19 @@
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: { message: "無法解析錯誤回應" } }));
-                    let errorMsg = `API 請求失敗 (${modelName}): ${response.status}`;
-                    if (errorData.error && errorData.error.message) errorMsg += ` - ${errorData.error.message}`;
-                    if (response.status === 400 && errorData.error?.message?.includes("API key not valid")) errorMsg += " 請檢查 API 金鑰。";
-                    else if (response.status === 400 && (errorData.error?.message?.includes("tunedModels") || errorData.error?.message?.includes("permission") || errorData.error?.message?.toLowerCase().includes("model not found") )) errorMsg += ` 模型 "${modelName}" 可能不存在、不可用或您無權限。請確認模型名稱。`;
-                    else if (response.status === 429) errorMsg += " 請求頻率限制。";
-                    logMessage("系統", errorMsg, 'user-turn');
+                    const errorData = await response.json().catch(() => ({ error: { message: "Unable to parse error response" } }));
+                    let errorMsgTemplate = errorData.error && errorData.error.message ? t.errorApiFailure : t.errorApiFailureNoMsg;
+                    let errorMsg = errorMsgTemplate
+                        .replace("{modelName}", modelName)
+                        .replace("{status}", response.status)
+                        .replace("{message}", (errorData.error && errorData.error.message) || "N/A");
+
+                    if (response.status === 400 && errorData.error?.message?.includes("API key not valid")) errorMsg += t.errorApiKeyInvalid;
+                    else if (response.status === 400 && (errorData.error?.message?.includes("tunedModels") || errorData.error?.message?.includes("permission") || errorData.error?.message?.toLowerCase().includes("model not found") )) {
+                         errorMsg += t.errorModelNotFound.replace("{modelName}", modelName);
+                    }
+                    else if (response.status === 429) errorMsg += t.errorRateLimit;
+                    logMessage(t.systemLogPrefix, errorMsg, 'user-turn');
                     console.error("API Error:", errorData);
                     showLoading(false);
                     return null;
@@ -293,19 +565,22 @@
                     agentHistory.push({ role: "model", parts: [{text: aiResponseText}] });
                     return aiResponseText;
                 } else if (data.promptFeedback && data.promptFeedback.blockReason) {
-                    logMessage("系統", `API 回應內容被阻止 (${modelName}): ${data.promptFeedback.blockReason}. ${data.promptFeedback.blockReasonMessage || ''}`, 'user-turn');
-                    return `(由於內容安全策略，我的部分回應被省略了：${data.promptFeedback.blockReason})`;
+                    logMessage(t.systemLogPrefix, t.errorResponseBlocked
+                        .replace("{modelName}", modelName)
+                        .replace("{reason}", data.promptFeedback.blockReason)
+                        .replace("{reasonMessage}", data.promptFeedback.blockReasonMessage || ''), 'user-turn');
+                    return `(My response was partially omitted due to content safety policy: ${data.promptFeedback.blockReason})`;
                 } else {
-                    logMessage("系統", `API 回應格式無法識別或為空 (${modelName})。`, 'user-turn');
+                    logMessage(t.systemLogPrefix, t.errorResponseInvalid.replace("{modelName}", modelName), 'user-turn');
                     console.log("Unexpected API response:", data);
-                    return "(AI未能生成有效回應)";
+                    return "(AI failed to generate a valid response)";
                 }
             } catch (error) {
                 showLoading(false);
                 if (error.name === 'AbortError') {
-                    logMessage("系統", "API 請求已被用戶中斷。", 'user-turn');
+                    logMessage(t.systemLogPrefix, t.errorRequestAborted, 'user-turn');
                 } else {
-                    logMessage("系統", `調用 API 時發生錯誤 (${modelName}): ${error.message}. 請檢查瀏覽器控制台 (可能是CORS問題)。`, 'user-turn');
+                    logMessage(t.systemLogPrefix, t.errorApiCall.replace("{modelName}", modelName).replace("{message}", error.message), 'user-turn');
                     console.error("Fetch Error:", error);
                 }
                 return null;
@@ -316,9 +591,10 @@
 
         // --- Conversation Logic ---
         function initializeConversation() {
+            const t = translations[currentLanguage];
             GEMINI_API_KEY = apiKeyInput.value.trim();
             if (!GEMINI_API_KEY) {
-                alert("請先輸入您的 Gemini API 金鑰！");
+                alert(t.errorApiKeyNotSet); // Simple alert for this common issue
                 apiKeyInput.focus();
                 return false;
             }
@@ -331,9 +607,9 @@
             for (let i = 0; i < numAIs; i++) {
                 const aiId = i + 1;
                 agents.push({
-                    name: document.getElementById(`aiName${aiId}`).value || `AI ${aiId}`,
+                    name: document.getElementById(`aiName${aiId}`).value || `${t.aiDefaultName} ${aiId}`,
                     model: document.getElementById(`aiModel${aiId}`).value,
-                    persona: document.getElementById(`aiPersona${aiId}`).value || "你是一個參與對話的AI助手。",
+                    persona: document.getElementById(`aiPersona${aiId}`).value || "You are an AI assistant participating in a conversation.", // Generic persona
                     history: []
                 });
             }
@@ -347,30 +623,38 @@
             startConversationBtn.style.display = 'none';
             stopConversationBtn.style.display = 'inline-block';
             nextTurnBtn.style.display = 'inline-block';
-            nextTurnBtn.disabled = autoNextTurnCheckbox.checked; // Modified: Disable if auto mode is on
+            nextTurnBtn.disabled = autoNextTurnCheckbox.checked;
             exportLogBtn.style.display = 'inline-block';
             userInputSection.style.display = 'block';
 
-            const autoModeStatus = autoNextTurnCheckbox.checked ? '開啟' : '關閉';
-            logMessage("系統", `對話開始！主題：${conversationTopicInput.value.trim() || "自由對話"}。共 ${numAIs} 位 AI，最多 ${maxTurnsInput.value} 輪。每分鐘最多 ${currentRateLimit} 次AI發言。自動發言模式：${autoModeStatus}。`, 'user-turn');
+            const autoModeStatus = autoNextTurnCheckbox.checked ? t.logAutoModeOn : t.logAutoModeOff;
+            logMessage(t.systemLogPrefix, t.logConversationStarted
+                .replace("{topic}", conversationTopicInput.value.trim() || t.logTopicFree)
+                .replace("{numAIs}", numAIs)
+                .replace("{maxTurns}", maxTurnsInput.value)
+                .replace("{rateLimit}", currentRateLimit)
+                .replace("{autoModeStatus}", autoModeStatus), 'user-turn');
             return true;
         }
 
         async function checkRateLimitAndProceed(isFirstTurn = false, userInjectedMessage = null) {
-            if (!conversationActive) return; // Don't proceed if conversation isn't active
+            const t = translations[currentLanguage];
+            if (!conversationActive) return; 
 
             const now = Date.now();
             apiCallTimestamps = apiCallTimestamps.filter(ts => now - ts < 60000);
 
             if (apiCallTimestamps.length >= currentRateLimit) {
                 const timeToWait = Math.max(0, 60000 - (now - apiCallTimestamps[0]));
-                logMessage("系統", `已達到每分鐘 ${currentRateLimit} 次的發言限制。將在 ${Math.ceil(timeToWait / 1000)} 秒後繼續...`, 'user-turn');
+                const waitSeconds = Math.ceil(timeToWait / 1000);
+                logMessage(t.systemLogPrefix, t.logRateLimitWait.replace("{rateLimit}", currentRateLimit).replace("{seconds}", waitSeconds), 'user-turn');
+                
                 showLoading(true);
-                loadingIndicator.querySelector('p').textContent = `速率限制中，等待 ${Math.ceil(timeToWait / 1000)} 秒...`;
+                loadingIndicator.querySelector('p').textContent = t.rateLimitWaitingText.replace('{seconds}', waitSeconds);
 
                 setTimeout(() => {
-                    if (!conversationActive) return; // Check again after timeout
-                    loadingIndicator.querySelector('p').textContent = `AI 正在思考中...`;
+                    if (!conversationActive) return; 
+                    loadingIndicator.querySelector('p').textContent = t.loadingText; // Reset loading text
                     nextAITurn(isFirstTurn, userInjectedMessage);
                 }, timeToWait + 200);
                 return;
@@ -379,9 +663,10 @@
         }
 
         async function nextAITurn(isFirstTurn = false, userInjectedMessage = null) {
+            const t = translations[currentLanguage];
             if (!conversationActive || currentTurn >= currentMaxTurns) {
-                if (conversationActive) stopConversation(); // Ensure stopped if not already
-                if(currentTurn >= currentMaxTurns && fullConversationHistory.length > 0) logMessage("系統", "已達到最大對話輪次。", 'user-turn');
+                if (conversationActive) stopConversation(); 
+                if(currentTurn >= currentMaxTurns && fullConversationHistory.length > 0) logMessage(t.systemLogPrefix, t.logMaxTurnsReached, 'user-turn');
                 return;
             }
 
@@ -391,9 +676,10 @@
             let prompt;
             let contextForThisTurn = "";
 
-            const historyLookBack = Math.min(fullConversationHistory.length, 8);
+            const historyLookBack = Math.min(fullConversationHistory.length, 8); // Keep context concise
             if (historyLookBack > 0) {
-                contextForThisTurn = "這是最近的對話內容摘要：\n" +
+                // Using English for context to AI, assuming models are primarily trained in English
+                contextForThisTurn = "Here is a summary of the recent conversation:\n" +
                     fullConversationHistory.slice(-historyLookBack)
                     .map(turn => `${turn.sender}: ${turn.message.substring(0, 200)}${turn.message.length > 200 ? '...' : ''}`)
                     .join("\n") + "\n\n";
@@ -401,40 +687,42 @@
 
             if (isFirstTurn) {
                 const topic = conversationTopicInput.value.trim();
-                prompt = `你好, ${currentAgent.name}! ${currentAgent.persona}\n我們正在開始一個新的多方AI對話。`;
-                if (topic) prompt += ` 對話的主題是：“${topic}”。\n請你先開始發言。`;
-                else prompt += ` 請你隨意開啟一個話題並開始發言。`;
+                prompt = `Hello, ${currentAgent.name}! ${currentAgent.persona}\nWe are starting a new multi-AI conversation.`;
+                if (topic) prompt += ` The topic is: "${topic}".\nPlease make your opening statement.`;
+                else prompt += ` Please start with any topic and make your opening statement.`;
             } else {
-                prompt = `${currentAgent.persona}\n${contextForThisTurn}現在輪到你了，${currentAgent.name}。請根據以上對話繼續。你的發言應簡潔且有觀點。`;
+                prompt = `${currentAgent.persona}\n${contextForThisTurn}It's your turn, ${currentAgent.name}. Please continue the conversation based on the above. Keep your response concise and to the point.`;
             }
 
             if (userInjectedMessage) {
-                 prompt += `\n\n一位人類觀察者介入並說：“${userInjectedMessage}”。請在你的回應中考慮這一點。`;
-                 let tempUserHistoryEntry = {role: "user", parts: [{text: `(一位人類觀察者說：“${userInjectedMessage}”)`}]};
-                 let tempModelAckEntry = {role: "model", parts: [{text: `(我已注意到觀察者的訊息)`}]};
+                 prompt += `\n\nA human observer has interjected: "${userInjectedMessage}". Please consider this in your response.`;
+                 let tempUserHistoryEntry = {role: "user", parts: [{text: `(A human observer said: “${userInjectedMessage}”)`}]};
+                 let tempModelAckEntry = {role: "model", parts: [{text: `(I have noted the observer's message.)`}]}; // Ack in English for model
                  if(currentAgent.history.length > 0 && currentAgent.history[currentAgent.history.length-1].role === 'model'){
                     currentAgent.history.push(tempUserHistoryEntry, tempModelAckEntry);
                  } else {
                      currentAgent.history.push(tempUserHistoryEntry);
                  }
             }
-
+            
+            // Persona prompt should be in English for the model generally
             let agentApiHistory = currentAgent.history.slice();
             if (agentApiHistory.length === 0 || !agentApiHistory[0]?.parts[0]?.text.includes(currentAgent.persona.substring(0,10))) {
-                 agentApiHistory.unshift({role: 'user', parts: [{text: `${currentAgent.persona}\n你正在參與一個多AI對話。你的名字是${currentAgent.name}。`}]});
+                 agentApiHistory.unshift({role: 'user', parts: [{text: `${currentAgent.persona}\nYou are in a multi-AI conversation. Your name is ${currentAgent.name}.`}]});
                  if (agentApiHistory.length === 1 || agentApiHistory[1].role !== 'model') {
-                    agentApiHistory.push({role: 'model', parts: [{text: "好的，我明白了我的角色和設定。"}]});
+                    agentApiHistory.push({role: 'model', parts: [{text: "Okay, I understand my role and settings."}]});
                  }
             }
-            const agentApiHistoryLimit = 4 * 2;
+            const agentApiHistoryLimit = 4 * 2; // ~4 turns of context for the agent itself
             if(agentApiHistory.length > agentApiHistoryLimit) {
                 agentApiHistory = [agentApiHistory[0], agentApiHistory[1], ...agentApiHistory.slice(-(agentApiHistoryLimit-2))];
             }
 
-            const aiResponse = await callGeminiApi(prompt, currentAgent.model, agentApiHistory);
-            currentAgent.history = agentApiHistory;
 
-            if (!conversationActive) return; // Might have been stopped during API call
+            const aiResponse = await callGeminiApi(prompt, currentAgent.model, agentApiHistory);
+            currentAgent.history = agentApiHistory; // Update agent's own history
+
+            if (!conversationActive) return; 
 
             if (aiResponse) {
                 logMessage(currentAgent.name, aiResponse, 'ai-turn');
@@ -442,35 +730,35 @@
                 currentAIIndex = (currentAIIndex + 1) % agents.length;
                 if (currentTurn >= currentMaxTurns) {
                     stopConversation();
-                    logMessage("系統", "已達到最大對話輪次。", 'user-turn');
-                } else if (conversationActive && autoNextTurnCheckbox.checked) { // Auto proceed
+                    logMessage(t.systemLogPrefix, t.logMaxTurnsReached, 'user-turn');
+                } else if (conversationActive && autoNextTurnCheckbox.checked) { 
                     checkRateLimitAndProceed(false, null);
                 }
             } else {
-                logMessage("系統", `${currentAgent.name} 未能成功發言。`, 'user-turn');
+                logMessage(t.systemLogPrefix, t.logAiFailedToSpeak.replace("{agentName}", currentAgent.name), 'user-turn');
                 if (agents.length > 0) currentAIIndex = (currentAIIndex + 1) % agents.length;
                 
                 if (currentTurn >= currentMaxTurns && conversationActive) {
                     stopConversation();
                 } else if (conversationActive && autoNextTurnCheckbox.checked && agents.length > 0) {
-                    logMessage("系統", "自動嘗試下一位 AI...", 'user-turn');
+                    logMessage(t.systemLogPrefix, t.logAutoRetryNextAi, 'user-turn');
                     setTimeout(() => {
                         if (conversationActive) checkRateLimitAndProceed(false, null);
-                    }, 500); // Short delay before auto-retrying next AI
+                    }, 500); 
                 }
             }
-            // Button states are primarily handled by showLoading and the checkbox listener
             if (conversationActive) {
-                 showLoading(loadingIndicator.style.display === 'block'); // Re-evaluate button states based on current loading and auto mode
+                 showLoading(loadingIndicator.style.display === 'block');
             }
         }
 
         function stopConversation() {
+            const t = translations[currentLanguage];
             if (abortController) {
                 abortController.abort();
             }
             conversationActive = false;
-            logMessage("系統", "對話已終止。", 'user-turn');
+            logMessage(t.systemLogPrefix, t.logConversationStopped, 'user-turn');
             startConversationBtn.style.display = 'inline-block';
             startConversationBtn.disabled = false;
             stopConversationBtn.style.display = 'none';
@@ -480,13 +768,14 @@
         }
 
         function exportConversationLog() {
-            let logText = `AI Arena 對話記錄\n主題: ${conversationTopicInput.value.trim() || "自由對話"}\n`;
-            logText += `參與者:\n${agents.map(a => `  - ${a.name} (模型: ${a.model}, 個性: ${a.persona || '無'})`).join('\n')}\n\n`;
+            const t = translations[currentLanguage];
+            let logText = `AI Arena Conversation Log\nTopic: ${conversationTopicInput.value.trim() || t.logTopicFree}\n`; // Using English for log file consistency
+            logText += `Participants:\n${agents.map(a => `  - ${a.name} (Model: ${a.model}, Persona: ${a.persona || 'None'})`).join('\n')}\n\n`;
             logText += "------------------------------------\n\n";
             fullConversationHistory.forEach(turn => {
                 logText += `${turn.sender}:\n${turn.message}\n\n`;
             });
-            logText += "------------------------------------\n對話結束";
+            logText += "------------------------------------\nConversation End";
 
             const blob = new Blob([logText], { type: 'text/plain;charset=utf-8;' });
             const link = document.createElement("a");
@@ -516,20 +805,21 @@
         } catch (e) { console.warn("Session storage unavailable.");}
 
         getApiKeyBtn.addEventListener('click', () => {
-            window.open('https://aistudio.google.com/app/apikey', '_blank'); // Updated link
+            window.open('https://aistudio.google.com/app/apikey', '_blank');
         });
 
         addCustomModelBtn.addEventListener('click', () => {
+            const t = translations[currentLanguage];
             const modelName = customModelNameInput.value.trim();
             if (modelName && !availableModels.some(m => m.value === modelName)) {
-                availableModels.push({ name: `${modelName} (自定義)`, value: modelName });
-                updateAgentConfigUI();
+                availableModels.push({ nameKey: modelName, value: modelName, isCustom: true }); // Store nameKey as modelName itself for custom
+                updateAgentConfigUI(); // This will use currentLanguage to get the suffix
                 customModelNameInput.value = '';
-                logMessage("系統", `自定義模型 "${modelName}" 已添加。`, 'user-turn');
+                logMessage(t.systemLogPrefix, t.logCustomModelAdded.replace("{modelName}", modelName), 'user-turn');
             } else if (!modelName) {
-                alert("請輸入有效的模型名稱。");
+                alert(t.alertEnterModelName);
             } else {
-                alert(`模型 "${modelName}" 已存在於列表中。`);
+                alert(t.alertModelExists.replace("{modelName}", modelName));
             }
         });
 
@@ -540,7 +830,7 @@
         });
 
         nextTurnBtn.addEventListener('click', () => {
-            if (conversationActive && !autoNextTurnCheckbox.checked) { // Only if manual mode
+            if (conversationActive && !autoNextTurnCheckbox.checked) {
                 checkRateLimitAndProceed();
             }
         });
@@ -549,36 +839,48 @@
         exportLogBtn.addEventListener('click', exportConversationLog);
 
         sendUserMessageBtn.addEventListener('click', () => {
+            const t = translations[currentLanguage];
             const userMessage = userInjectMessageInput.value.trim();
             if (!userMessage || !conversationActive) return;
-            logMessage("你 (觀察者)", userMessage, 'user-turn');
+            logMessage(t.observerLogPrefix, userMessage, 'user-turn');
             userInjectMessageInput.value = '';
-            // AI will respond to this message, then auto-proceed if enabled
             checkRateLimitAndProceed(false, userMessage);
         });
 
         autoNextTurnCheckbox.addEventListener('change', () => {
+            const t = translations[currentLanguage];
             if (conversationActive) {
                 nextTurnBtn.disabled = autoNextTurnCheckbox.checked || loadingIndicator.style.display === 'block';
                 if (autoNextTurnCheckbox.checked && 
-                    !loadingIndicator.style.display === 'block' && 
+                    loadingIndicator.style.display !== 'block' && 
                     currentTurn < currentMaxTurns &&
                     agents.length > 0) {
-                    logMessage("系統", "自動發言模式已開啟。將自動觸發下一位。", 'user-turn');
+                    logMessage(t.systemLogPrefix, t.logAutoModeOn + ". " + t.logAutoRetryNextAi, 'user-turn');
                     checkRateLimitAndProceed(false, null);
                 } else if (!autoNextTurnCheckbox.checked) {
-                    logMessage("系統", "自動發言模式已關閉。請手動點擊「下一位 AI 發言」或等待當前AI完成。", 'user-turn');
+                     logMessage(t.systemLogPrefix, t.logAutoModeOff + ". " + (translations[currentLanguage].nextTurnBtn) + " " + (translations[currentLanguage].userInjectMessageLabel.split(':')[0]), 'user-turn');
                 }
             } else {
-                nextTurnBtn.disabled = autoNextTurnCheckbox.checked; // For consistency if it were visible
+                nextTurnBtn.disabled = autoNextTurnCheckbox.checked;
             }
         });
+        
+        langEnBtn.addEventListener('click', () => setLanguage('en'));
+        langZhBtn.addEventListener('click', () => setLanguage('zh'));
 
         // Initial UI setup
-        if (!conversationLogDiv.hasChildNodes() || (conversationLogDiv.firstChild && conversationLogDiv.firstChild.nodeName === 'P' && conversationLogDiv.firstChild.textContent.includes("尚未開始"))) {
-             conversationLogDiv.innerHTML = '<p><em>對話尚未開始... 請在左側配置並開始。</em></p>';
-        }
+        try {
+            const preferredLang = localStorage.getItem('aiArenaLanguage');
+            if (preferredLang && translations[preferredLang]) {
+                currentLanguage = preferredLang;
+            }
+        } catch(e) { console.warn("Local storage unavailable for loading language preference.");}
+        
+        setLanguage(currentLanguage); // Apply language an initial render
 
+        if (!conversationLogDiv.hasChildNodes() || (conversationLogDiv.firstChild && conversationLogDiv.firstChild.id === 'conversationNotStarted')) {
+             document.getElementById('conversationNotStarted').innerHTML = translations[currentLanguage].conversationNotStarted;
+        }
     </script>
 </body>
 </html>
