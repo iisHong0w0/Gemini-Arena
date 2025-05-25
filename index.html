@@ -44,7 +44,7 @@
         .ai-turn { background-color: #e7f3ff; border-left: 4px solid #1877f2; margin-right: auto; }
         .user-turn { background-color: #d5f0d9; border-left: 4px solid #42b72a; margin-left: auto; text-align: left; } /* System/User messages */
         .chat-turn .sender { font-weight: bold; display: block; margin-bottom: 0.4em; font-size: 0.9em; }
-        .chat-turn .message-content { font-size: 0.95em; }
+        .chat-turn .message-content { font-size: 0.95em; white-space: pre-wrap; } /* Added pre-wrap for newlines */
         .loading-indicator { display: none; text-align: center; padding: 1em; }
         .warning { background-color: #fffbe2; color: #5c4d00; padding: 1em; border-radius: 4px; border: 1px solid #fff0b3; margin-bottom: 1em; font-size: 0.85em;}
         #userInputSection { margin-top:1em; padding-top:1em; border-top: 1px solid #dddfe2;}
@@ -214,7 +214,7 @@
                 autoNextTurnNote: "If enabled, AIs will take turns automatically.",
                 modelManagementTitle: "Model Management (Optional)",
                 customModelNameLabel: "Add Custom Model Name (built-in models available)",
-                customModelNamePlaceholder: "e.g., gemini-1.5-flash",
+                customModelNamePlaceholder: "e.g., gemini-1.5-pro",
                 addCustomModelBtn: "Add",
                 customModelNote: "After adding, the model will appear in the AI config dropdowns below.",
                 aiParticipantsConfigTitle: "AI Participant Configuration",
@@ -263,8 +263,8 @@
                 logAiFailedToSpeak: "{agentName} failed to speak.",
                 logAutoRetryNextAi: "Automatically trying next AI...",
                 logRateLimitWait: "Reached {rateLimit} calls per minute limit. Will continue in {seconds} seconds...",
-                modelFlashPreviewName: "Gemini 1.5 Flash Preview (05-20)", // Example for localizing model names
-                modelFlashName: "Gemini 1.5 Flash",
+                modelFlashPreviewName: "Gemini 2.5 Flash Preview (04-17)",
+                modelFlashName: "Gemini 2.0 Flash",
                 modelCustomSuffix: "(Custom)"
             },
             zh: {
@@ -285,7 +285,7 @@
                 autoNextTurnNote: "啟用後，AI 將自動輪流發言。",
                 modelManagementTitle: "模型管理(可選)",
                 customModelNameLabel: "添加自定義模型名稱(本身自帶模型)",
-                customModelNamePlaceholder: "例如：gemini-1.5-flash",
+                customModelNamePlaceholder: "例如：gemini-1.5-pro",
                 addCustomModelBtn: "添加",
                 customModelNote: "添加後，模型將出現在下方AI配置的下拉選單中。",
                 aiParticipantsConfigTitle: "AI 參與者配置",
@@ -334,15 +334,15 @@
                 logAiFailedToSpeak: "{agentName} 未能成功發言。",
                 logAutoRetryNextAi: "自動嘗試下一位 AI...",
                 logRateLimitWait: "已達到每分鐘 {rateLimit} 次的發言限制。將在 {seconds} 秒後繼續...",
-                modelFlashPreviewName: "Gemini 1.5 Flash 預覽版 (05-20)",
-                modelFlashName: "Gemini 1.5 Flash",
+                modelFlashPreviewName: "Gemini 2.5 Flash 預覽版 (04-17)",
+                modelFlashName: "Gemini 2.0 Flash",
                 modelCustomSuffix: "(自定義)"
             }
         };
 
         let availableModels = [ // Base values, names will be localized
-            { nameKey: "modelFlashPreviewName", value: "gemini-1.5-flash-preview-05-20" },
-            { nameKey: "modelFlashName", value: "gemini-1.5-flash" } // Corrected to 1.5, as was in HTML
+            { nameKey: "modelFlashPreviewName", value: "gemini-2.5-flash-preview-04-17" },
+            { nameKey: "modelFlashName", value: "gemini-2.0-flash" }
         ];
 
         function setLanguage(lang) {
@@ -381,11 +381,11 @@
             
             document.getElementById('modelManagementTitle').textContent = t.modelManagementTitle;
             document.getElementById('customModelNameLabel').textContent = t.customModelNameLabel;
-            customModelNameInput.placeholder = t.customModelNamePlaceholder;
+            customModelNameInput.placeholder = t.customModelNamePlaceholder; // Update placeholder too
             addCustomModelBtn.textContent = t.addCustomModelBtn;
             document.getElementById('customModelNote').textContent = t.customModelNote;
             
-            document.getElementById('aiParticipantsConfigTitle').textContent = t.aiParticipantsConfigTitle; // This title is static
+            document.getElementById('aiParticipantsConfigTitle').textContent = t.aiParticipantsConfigTitle; 
             updateAgentConfigUI(); // Re-render AI cards with new language
 
             startConversationBtn.textContent = t.startConversationBtn;
@@ -403,7 +403,7 @@
             if (conversationLogDiv.firstChild && conversationLogDiv.firstChild.id === 'conversationNotStarted') {
                  document.getElementById('conversationNotStarted').innerHTML = t.conversationNotStarted;
             }
-            document.getElementById('loadingText').textContent = t.loadingText; // Default loading text
+            document.getElementById('loadingText').textContent = t.loadingText; 
 
             document.getElementById('userInjectMessageLabel').textContent = t.userInjectMessageLabel;
             userInjectMessageInput.placeholder = t.userInjectMessagePlaceholder;
@@ -415,7 +415,7 @@
         function showLoading(show) {
             const t = translations[currentLanguage];
             loadingIndicator.style.display = show ? 'block' : 'none';
-            if (show && loadingIndicator.querySelector('p').textContent.includes(t.rateLimitWaitingText.substring(0,10))) { // a bit hacky check
+            if (show && loadingIndicator.querySelector('p').textContent.includes(t.rateLimitWaitingText.substring(0,10))) { 
                 // Don't overwrite rate limit message
             } else {
                 loadingIndicator.querySelector('p').textContent = t.loadingText;
@@ -440,11 +440,26 @@
             const turnDiv = document.createElement('div');
             turnDiv.classList.add('chat-turn', turnType);
 
-            let formattedMessage = sanitizeHTML(message);
+            // Basic Markdown to HTML (bold, italic, basic lists)
+            let formattedMessage = sanitizeHTML(message); // Sanitize first
+            // Newlines for AI output
+            // formattedMessage = formattedMessage.replace(/\n/g, '<br>');
+
+            // Bold: **text** or __text__
             formattedMessage = formattedMessage.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedMessage = formattedMessage.replace(/__(.*?)__/g, '<strong>$1</strong>');
+            // Italic: *text* or _text_
             formattedMessage = formattedMessage.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            formattedMessage = formattedMessage.replace(/(\r\n|\r|\n)([\*\-\+] +(.*))/g, (match, p1, p2, p3) => `${p1}<li>${p3.trim()}</li>`);
-            formattedMessage = formattedMessage.replace(/(<li>.*?<\/li>\s*)+/g, (match) => `<ul>${match}</ul>`);
+            formattedMessage = formattedMessage.replace(/_(.*?)_/g, '<em>$1</em>');
+            // Basic unordered lists (lines starting with * , + , or - )
+            // This is a bit tricky to do perfectly with regex without more complex parsing
+            // Handle simple cases where list items are on new lines
+            formattedMessage = formattedMessage.replace(/^(\s*[\*\-\+]\s+)(.*)/gm, '<li>$2</li>');
+            // Wrap consecutive <li> items in <ul>
+            if (formattedMessage.includes('<li>')) {
+                formattedMessage = formattedMessage.replace(/(<li>.*<\/li>\s*)+/g, (match) => `<ul>${match}</ul>`);
+            }
+
 
             turnDiv.innerHTML = `<span class="sender">${sanitizeHTML(localizedSender)}:</span><div class="message-content">${formattedMessage}</div>`;
             
@@ -454,39 +469,34 @@
             }
             conversationLogDiv.appendChild(turnDiv);
             conversationLogDiv.scrollTop = conversationLogDiv.scrollHeight;
-            fullConversationHistory.push({ sender: localizedSender, message }); // Store with localized sender for consistency if re-rendering
+            fullConversationHistory.push({ sender: localizedSender, message }); 
         }
 
         function updateAgentConfigUI() {
             const t = translations[currentLanguage];
-            // Update the main title for AI Participants Config if it's not already part of the static text update
             const mainTitleEl = document.getElementById('aiParticipantsConfigTitle');
             if (mainTitleEl) mainTitleEl.textContent = t.aiParticipantsConfigTitle;
 
-
-            let configHTML = ''; // Build HTML string then set innerHTML once
-            const numAIs = parseInt(numAIsInput.value);
-             if (isNaN(numAIs) || numAIs < 2 || numAIs > 5) {
-                numAIsInput.value = Math.max(2, Math.min(5, isNaN(numAIs) ? 2 : numAIs));
-                // No early return, proceed to render with corrected value
+            let configHTML = ''; 
+            const numAIsVal = parseInt(numAIsInput.value);
+             if (isNaN(numAIsVal) || numAIsVal < 2 || numAIsVal > 5) {
+                numAIsInput.value = Math.max(2, Math.min(5, isNaN(numAIsVal) ? 2 : numAIsVal));
             }
             
-            // Localize model names for the dropdown
             const localizedModels = availableModels.map(m => {
-                let name = t[m.nameKey] || m.value; // Fallback to value if key not found
+                let name = t[m.nameKey] || m.value; 
                 if (m.isCustom) name += ` ${t.modelCustomSuffix}`;
                 return { name, value: m.value };
             });
 
-            for (let i = 0; i < numAIsInput.value; i++) {
+            for (let i = 0; i < parseInt(numAIsInput.value); i++) {
                 const aiId = i + 1;
-                // Preserve existing values if possible when re-rendering due to language change
                 const existingNameInput = document.getElementById(`aiName${aiId}`);
                 const existingModelSelect = document.getElementById(`aiModel${aiId}`);
                 const existingPersonaTextarea = document.getElementById(`aiPersona${aiId}`);
 
                 const currentName = existingNameInput ? existingNameInput.value : `${t.aiDefaultName} ${aiId}`;
-                const currentModel = existingModelSelect ? existingModelSelect.value : (localizedModels.length > 0 ? localizedModels[0].value : '');
+                const currentModelValue = existingModelSelect ? existingModelSelect.value : (localizedModels.length > 0 ? localizedModels[0].value : '');
                 const currentPersona = existingPersonaTextarea ? existingPersonaTextarea.value : "";
 
                 configHTML += `
@@ -496,23 +506,18 @@
                         <input type="text" id="aiName${aiId}" value="${sanitizeHTML(currentName)}">
                         <label for="aiModel${aiId}">${t.aiModelLabel}</label>
                         <select id="aiModel${aiId}">
-                            ${localizedModels.map(m => `<option value="${m.value}" ${m.value === currentModel ? 'selected' : ''} title="${m.value}">${m.name}</option>`).join('')}
+                            ${localizedModels.map(m => `<option value="${m.value}" ${m.value === currentModelValue ? 'selected' : ''} title="${m.value}">${sanitizeHTML(m.name)}</option>`).join('')}
                         </select>
                         <label for="aiPersona${aiId}">${t.aiPersonaLabel}</label>
                         <textarea id="aiPersona${aiId}" placeholder="${t.aiPersonaPlaceholder}">${sanitizeHTML(currentPersona)}</textarea>
                     </div>
                 `;
             }
-            // Clear only the cards, not the title if title is static
-            const containerContent = aiAgentsConfigContainer.querySelector('.ai-config-card') ? aiAgentsConfigContainer : document.createElement('div');
-            if(aiAgentsConfigContainer.children.length > 1) { // If cards exist, replace them
-                // Remove existing cards
-                Array.from(aiAgentsConfigContainer.getElementsByClassName('ai-config-card')).forEach(card => card.remove());
-            }
+            
+            Array.from(aiAgentsConfigContainer.getElementsByClassName('ai-config-card')).forEach(card => card.remove());
             aiAgentsConfigContainer.insertAdjacentHTML('beforeend', configHTML);
         }
         numAIsInput.addEventListener('input', updateAgentConfigUI);
-        // Initial call to render based on default numAIs and language is handled by setLanguage -> updateAgentConfigUI
 
         // --- Gemini API Call ---
         async function callGeminiApi(prompt, modelName, agentHistory) {
@@ -565,11 +570,14 @@
                     agentHistory.push({ role: "model", parts: [{text: aiResponseText}] });
                     return aiResponseText;
                 } else if (data.promptFeedback && data.promptFeedback.blockReason) {
-                    logMessage(t.systemLogPrefix, t.errorResponseBlocked
+                    const blockMsg = t.errorResponseBlocked
                         .replace("{modelName}", modelName)
                         .replace("{reason}", data.promptFeedback.blockReason)
-                        .replace("{reasonMessage}", data.promptFeedback.blockReasonMessage || ''), 'user-turn');
-                    return `(My response was partially omitted due to content safety policy: ${data.promptFeedback.blockReason})`;
+                        .replace("{reasonMessage}", data.promptFeedback.blockReasonMessage || '');
+                    logMessage(t.systemLogPrefix, blockMsg, 'user-turn');
+                    // Let the AI "say" it was blocked
+                    return `(My response was blocked due to: ${data.promptFeedback.blockReason}${data.promptFeedback.blockReasonMessage ? ` - ${data.promptFeedback.blockReasonMessage}` : ''})`;
+
                 } else {
                     logMessage(t.systemLogPrefix, t.errorResponseInvalid.replace("{modelName}", modelName), 'user-turn');
                     console.log("Unexpected API response:", data);
@@ -594,7 +602,7 @@
             const t = translations[currentLanguage];
             GEMINI_API_KEY = apiKeyInput.value.trim();
             if (!GEMINI_API_KEY) {
-                alert(t.errorApiKeyNotSet); // Simple alert for this common issue
+                alert(t.errorApiKeyNotSet); 
                 apiKeyInput.focus();
                 return false;
             }
@@ -609,7 +617,7 @@
                 agents.push({
                     name: document.getElementById(`aiName${aiId}`).value || `${t.aiDefaultName} ${aiId}`,
                     model: document.getElementById(`aiModel${aiId}`).value,
-                    persona: document.getElementById(`aiPersona${aiId}`).value || "You are an AI assistant participating in a conversation.", // Generic persona
+                    persona: document.getElementById(`aiPersona${aiId}`).value || "You are an AI assistant participating in a conversation.", 
                     history: []
                 });
             }
@@ -653,10 +661,13 @@
                 loadingIndicator.querySelector('p').textContent = t.rateLimitWaitingText.replace('{seconds}', waitSeconds);
 
                 setTimeout(() => {
-                    if (!conversationActive) return; 
-                    loadingIndicator.querySelector('p').textContent = t.loadingText; // Reset loading text
+                    if (!conversationActive) {
+                        showLoading(false); // Ensure loading is hidden if conversation stopped during wait
+                        return; 
+                    }
+                    loadingIndicator.querySelector('p').textContent = t.loadingText; 
                     nextAITurn(isFirstTurn, userInjectedMessage);
-                }, timeToWait + 200);
+                }, timeToWait + 200); // Add a small buffer
                 return;
             }
             nextAITurn(isFirstTurn, userInjectedMessage);
@@ -669,6 +680,11 @@
                 if(currentTurn >= currentMaxTurns && fullConversationHistory.length > 0) logMessage(t.systemLogPrefix, t.logMaxTurnsReached, 'user-turn');
                 return;
             }
+            if (agents.length === 0) { // Safety check
+                 stopConversation();
+                 logMessage(t.systemLogPrefix, "Error: No AI agents configured.", 'user-turn');
+                 return;
+            }
 
             apiCallTimestamps.push(Date.now());
 
@@ -676,51 +692,60 @@
             let prompt;
             let contextForThisTurn = "";
 
-            const historyLookBack = Math.min(fullConversationHistory.length, 8); // Keep context concise
+            const historyLookBack = Math.min(fullConversationHistory.length, 6); // Limit context size (3 turns approx)
             if (historyLookBack > 0) {
-                // Using English for context to AI, assuming models are primarily trained in English
-                contextForThisTurn = "Here is a summary of the recent conversation:\n" +
+                contextForThisTurn = "This is the recent conversation history (last few turns):\n" +
                     fullConversationHistory.slice(-historyLookBack)
-                    .map(turn => `${turn.sender}: ${turn.message.substring(0, 200)}${turn.message.length > 200 ? '...' : ''}`)
+                    .map(turn => `${turn.sender}: ${turn.message.substring(0, 300)}${turn.message.length > 300 ? '...' : ''}`) // Limit message length in context
                     .join("\n") + "\n\n";
             }
 
             if (isFirstTurn) {
                 const topic = conversationTopicInput.value.trim();
-                prompt = `Hello, ${currentAgent.name}! ${currentAgent.persona}\nWe are starting a new multi-AI conversation.`;
-                if (topic) prompt += ` The topic is: "${topic}".\nPlease make your opening statement.`;
-                else prompt += ` Please start with any topic and make your opening statement.`;
+                prompt = `You are ${currentAgent.name}. ${currentAgent.persona}\nWe are starting a new multi-AI conversation.`;
+                if (topic) prompt += ` The main topic is: "${topic}".\nPlease make your opening statement or ask a question related to the topic.`;
+                else prompt += ` Please start with any topic you find interesting and make your opening statement or ask a question.`;
             } else {
-                prompt = `${currentAgent.persona}\n${contextForThisTurn}It's your turn, ${currentAgent.name}. Please continue the conversation based on the above. Keep your response concise and to the point.`;
+                prompt = `You are ${currentAgent.name}. ${currentAgent.persona}\n${contextForThisTurn}It's your turn. Please continue the conversation naturally based on the above. Address other participants if relevant.`;
             }
 
             if (userInjectedMessage) {
-                 prompt += `\n\nA human observer has interjected: "${userInjectedMessage}". Please consider this in your response.`;
-                 let tempUserHistoryEntry = {role: "user", parts: [{text: `(A human observer said: “${userInjectedMessage}”)`}]};
-                 let tempModelAckEntry = {role: "model", parts: [{text: `(I have noted the observer's message.)`}]}; // Ack in English for model
-                 if(currentAgent.history.length > 0 && currentAgent.history[currentAgent.history.length-1].role === 'model'){
-                    currentAgent.history.push(tempUserHistoryEntry, tempModelAckEntry);
-                 } else {
-                     currentAgent.history.push(tempUserHistoryEntry);
-                 }
+                 prompt += `\n\nA human observer has just said: "${userInjectedMessage}". Please acknowledge or respond to this in your turn.`;
+                 // This modification to agent history will be handled by the API call logic
+                 // The goal is to make the model aware of this specific interjection for the current turn.
+                 // It will be part of the user prompt to the API for this turn.
             }
             
-            // Persona prompt should be in English for the model generally
-            let agentApiHistory = currentAgent.history.slice();
-            if (agentApiHistory.length === 0 || !agentApiHistory[0]?.parts[0]?.text.includes(currentAgent.persona.substring(0,10))) {
-                 agentApiHistory.unshift({role: 'user', parts: [{text: `${currentAgent.persona}\nYou are in a multi-AI conversation. Your name is ${currentAgent.name}.`}]});
-                 if (agentApiHistory.length === 1 || agentApiHistory[1].role !== 'model') {
-                    agentApiHistory.push({role: 'model', parts: [{text: "Okay, I understand my role and settings."}]});
-                 }
+            // Prepare history for the API call: system prompt + agent's own past turns.
+            let agentApiHistory = []; 
+            // System prompt for the agent
+            let systemPrompt = `You are ${currentAgent.name}. Your persona: "${currentAgent.persona || 'You are a helpful AI assistant.'}" You are participating in a multi-AI discussion. Be concise and stay in character.`;
+            if(currentAgent.model.includes("gemini-1.5") || currentAgent.model.includes("gemini-2.")){ // For newer models that might support system_instruction
+                // This is a guess, official API might use a different field for system instruction
+                // For now, let's prepend it as a user message followed by an "OK" model message
+                 agentApiHistory.push({role: 'user', parts: [{text: systemPrompt}]});
+                 agentApiHistory.push({role: 'model', parts: [{text: "Understood. I am ready to participate."}]});
+            } else {
+                 // For older models, just prepend system context to the first user message in history
+                 // If there's no userInjectedMessage, this will be handled by the main `prompt` construction.
+                 // if (agentApiHistory.length === 0) prompt = systemPrompt + "\n\n" + prompt;
+                 // This is complex. Simpler to ensure `prompt` itself has this.
+                 // The main `prompt` already contains persona.
             }
-            const agentApiHistoryLimit = 4 * 2; // ~4 turns of context for the agent itself
-            if(agentApiHistory.length > agentApiHistoryLimit) {
-                agentApiHistory = [agentApiHistory[0], agentApiHistory[1], ...agentApiHistory.slice(-(agentApiHistoryLimit-2))];
+
+
+            // Add agent's own conversation history (last few turns)
+            // Note: 'currentAgent.history' contains {role: "user", parts:[{text: "..."}]}, {role:"model", parts:[{text:"..."}]}
+            const agentSpecificHistoryLookback = 4 * 2; // about 4 turns for the agent itself
+            if(currentAgent.history.length > agentSpecificHistoryLookback) {
+                agentApiHistory.push(...currentAgent.history.slice(-agentSpecificHistoryLookback));
+            } else {
+                agentApiHistory.push(...currentAgent.history);
             }
 
 
             const aiResponse = await callGeminiApi(prompt, currentAgent.model, agentApiHistory);
-            currentAgent.history = agentApiHistory; // Update agent's own history
+            // currentAgent.history IS updated inside callGeminiApi if successful.
 
             if (!conversationActive) return; 
 
@@ -736,7 +761,7 @@
                 }
             } else {
                 logMessage(t.systemLogPrefix, t.logAiFailedToSpeak.replace("{agentName}", currentAgent.name), 'user-turn');
-                if (agents.length > 0) currentAIIndex = (currentAIIndex + 1) % agents.length;
+                if (agents.length > 0) currentAIIndex = (currentAIIndex + 1) % agents.length; // Try next AI
                 
                 if (currentTurn >= currentMaxTurns && conversationActive) {
                     stopConversation();
@@ -747,8 +772,9 @@
                     }, 500); 
                 }
             }
-            if (conversationActive) {
-                 showLoading(loadingIndicator.style.display === 'block');
+             if (conversationActive && !autoNextTurnCheckbox.checked) {
+                showLoading(false); // Ensure loading is off if not auto-proceeding
+                nextTurnBtn.disabled = false;
             }
         }
 
@@ -756,6 +782,7 @@
             const t = translations[currentLanguage];
             if (abortController) {
                 abortController.abort();
+                abortController = null;
             }
             conversationActive = false;
             logMessage(t.systemLogPrefix, t.logConversationStopped, 'user-turn');
@@ -769,7 +796,7 @@
 
         function exportConversationLog() {
             const t = translations[currentLanguage];
-            let logText = `AI Arena Conversation Log\nTopic: ${conversationTopicInput.value.trim() || t.logTopicFree}\n`; // Using English for log file consistency
+            let logText = `AI Arena Conversation Log\nTopic: ${conversationTopicInput.value.trim() || t.logTopicFree}\n`; 
             logText += `Participants:\n${agents.map(a => `  - ${a.name} (Model: ${a.model}, Persona: ${a.persona || 'None'})`).join('\n')}\n\n`;
             logText += "------------------------------------\n\n";
             fullConversationHistory.forEach(turn => {
@@ -812,8 +839,8 @@
             const t = translations[currentLanguage];
             const modelName = customModelNameInput.value.trim();
             if (modelName && !availableModels.some(m => m.value === modelName)) {
-                availableModels.push({ nameKey: modelName, value: modelName, isCustom: true }); // Store nameKey as modelName itself for custom
-                updateAgentConfigUI(); // This will use currentLanguage to get the suffix
+                availableModels.push({ nameKey: modelName, value: modelName, isCustom: true }); 
+                updateAgentConfigUI(); 
                 customModelNameInput.value = '';
                 logMessage(t.systemLogPrefix, t.logCustomModelAdded.replace("{modelName}", modelName), 'user-turn');
             } else if (!modelName) {
@@ -831,6 +858,7 @@
 
         nextTurnBtn.addEventListener('click', () => {
             if (conversationActive && !autoNextTurnCheckbox.checked) {
+                nextTurnBtn.disabled = true; // Disable immediately on click
                 checkRateLimitAndProceed();
             }
         });
@@ -842,9 +870,25 @@
             const t = translations[currentLanguage];
             const userMessage = userInjectMessageInput.value.trim();
             if (!userMessage || !conversationActive) return;
-            logMessage(t.observerLogPrefix, userMessage, 'user-turn');
+            logMessage(t.observerLogPrefix, userMessage, 'user-turn'); // Log it first
             userInjectMessageInput.value = '';
-            checkRateLimitAndProceed(false, userMessage);
+            if (autoNextTurnCheckbox.checked) {
+                // If auto, the next AI turn might already be queued or running.
+                // For simplicity, we inject into the *next* scheduled AI turn.
+                // Stop current AI if it's thinking, then proceed with user message for next.
+                if (abortController) {
+                    abortController.abort(); // Abort current API call if any
+                    // The API call error handler will eventually call showLoading(false)
+                    // We might need to explicitly re-enable buttons if abort leads to no next turn.
+                    // However, checkRateLimitAndProceed will handle the next turn.
+                }
+                // Add a small delay to ensure any aborted call is processed.
+                setTimeout(() => checkRateLimitAndProceed(false, userMessage), 100);
+
+            } else {
+                // Manual mode, the user message will be part of the next manual "Next AI Speaks"
+                checkRateLimitAndProceed(false, userMessage);
+            }
         });
 
         autoNextTurnCheckbox.addEventListener('change', () => {
@@ -859,6 +903,10 @@
                     checkRateLimitAndProceed(false, null);
                 } else if (!autoNextTurnCheckbox.checked) {
                      logMessage(t.systemLogPrefix, t.logAutoModeOff + ". " + (translations[currentLanguage].nextTurnBtn) + " " + (translations[currentLanguage].userInjectMessageLabel.split(':')[0]), 'user-turn');
+                     if (abortController) { // If an AI was speaking due to auto mode, stop it.
+                        abortController.abort();
+                     }
+                     showLoading(false); // Ensure loading is off
                 }
             } else {
                 nextTurnBtn.disabled = autoNextTurnCheckbox.checked;
@@ -876,7 +924,7 @@
             }
         } catch(e) { console.warn("Local storage unavailable for loading language preference.");}
         
-        setLanguage(currentLanguage); // Apply language an initial render
+        setLanguage(currentLanguage); 
 
         if (!conversationLogDiv.hasChildNodes() || (conversationLogDiv.firstChild && conversationLogDiv.firstChild.id === 'conversationNotStarted')) {
              document.getElementById('conversationNotStarted').innerHTML = translations[currentLanguage].conversationNotStarted;
